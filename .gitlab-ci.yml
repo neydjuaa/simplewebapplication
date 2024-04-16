@@ -1,0 +1,26 @@
+image: maven:3-jdk-11
+
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script:
+    - mvn clean package
+  artifacts:
+    paths:
+      - target/*.jar
+
+Deploy:
+    stage: deploy
+    before_script:
+    - 'command -v ssh-agent >/dev/null || (apk add --update openssh )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $IPADDRESS >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    script:
+        - scp -o StrictKeyChecking=no /home/gitlab-runner/builds/nM3PZygT/0/devopshint/tomcat/TomcatMavenApp-2.0.war vagrant@172.16.1.50:/opt/tomcat/webapps
